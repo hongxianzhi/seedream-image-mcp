@@ -11,7 +11,7 @@
 
 ## 📺 演示
 
-<video src="https://storage2.maoertech.cn/pixel-mcp/cdn/pixel-mcp-demo.mp4" autoplay muted loop playsinline controls width="100%" height="auto"></video>
+<video src="https://github.com/user-attachments/assets/2b82a9d4-7799-4625-a140-2a48845b2e4a" autoplay muted loop playsinline controls width="100%" height="auto"></video>
 
 ## 🚀 快速开始
 
@@ -72,6 +72,7 @@ AI 会自动调用工具完成生成。
 👉 了解云端版本：[https://mcp.pixelark.art](https://mcp.pixelark.art)
 
 ---
+
 
 ## 🛠️ 开发
 
