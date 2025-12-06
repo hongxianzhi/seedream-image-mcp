@@ -32,7 +32,7 @@ export async function generateImage(
   options: ImageGenerationOptions = {},
 ): Promise<ImageGenerationResult> {
   const {
-    model = "doubao-seedream-4-0-250828",
+    model = "doubao-seedream-4-5-251128",
     size = "1792x1024",
     watermark = false,
     images = [],
