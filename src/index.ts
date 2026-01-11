@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
@@ -7,24 +8,32 @@ import { generateImage, setArkApiKey } from "./utils/vol.js";
 function parseArgs() {
   const args = process.argv.slice(2);
   let arkKey = "";
+  let arkModel = "";
+  let arkEndpoint = "";
 
   for (const arg of args) {
     if (arg.startsWith("--ark-key=")) {
       arkKey = arg.substring("--ark-key=".length);
+    } else if (arg.startsWith("--ark-model=")) {
+      arkModel = arg.substring("--ark-model=".length);
+    } else if (arg.startsWith("--ark-endpoint=")) {
+      arkEndpoint = arg.substring("--ark-endpoint=".length);
     }
   }
 
   if (!arkKey) {
     console.error("Error: --ark-key is required");
-    console.error("Usage: npx seedream-image-mcp --ark-key=YOUR_API_KEY");
+    console.error(
+      "Usage: npx seedream-image-mcp --ark-key=YOUR_API_KEY [--ark-model=MODEL_NAME] [--ark-endpoint=REQUEST_ENDPOINT]",
+    );
     process.exit(1);
   }
 
-  return { arkKey };
+  return { arkKey, arkModel, arkEndpoint };
 }
 
-const { arkKey } = parseArgs();
-setArkApiKey(arkKey);
+const { arkKey, arkModel, arkEndpoint } = parseArgs();
+setArkApiKey(arkKey, arkModel, arkEndpoint);
 
 const server = new McpServer({
   name: "seedream-image-mcp",
@@ -32,18 +41,16 @@ const server = new McpServer({
 });
 
 // 注册图片生成工具
-server.registerTool(
+// @ts-ignore
+server.tool(
   "generate-image",
+  "使用火山引擎 SeeDream 模型生成图片。支持文字描述生成、智能参考图等功能",
   {
-    title: "生成图片",
-    description:
-      "使用火山引擎 SeeDream 模型生成图片。支持文字描述生成、智能参考图等功能",
-    inputSchema: {
-      prompt: z
-        .string()
-        .min(1)
-        .max(5000)
-        .describe(`图片描述提示词
+    prompt: z
+      .string()
+      .min(1)
+      .max(5000)
+      .describe(`图片描述提示词
 
 【提示词编写建议】
 1. 基础结构：内容主题 → 视觉细节 → 风格氛围 → 技术质量
@@ -58,11 +65,10 @@ server.registerTool(
 【重要约束】
 - 默认添加"画面无文字"；如需文字，明确标注"画面文字内容：XXX"
 - 内容必须合法合规`),
-      size: z
-        .string()
-        .optional()
-        .describe(
-          `图片尺寸，格式为 WIDTHxHEIGHT，默认 2560x1440
+    size: z
+      .string()
+      .optional()
+      .describe(`图片尺寸，格式为 WIDTHxHEIGHT，默认 2560x1440
 
 常用尺寸参考：
 - 21:9 超宽屏: 3024x1296
@@ -70,28 +76,30 @@ server.registerTool(
 - 4:3 传统: 2304x1728
 - 1:1 方形: 2048x2048
 - 3:4 竖屏: 1728x2304
-- 9:16 手机: 1440x2560`,
-        ),
-      watermark: z
-        .boolean()
-        .optional()
-        .describe("是否添加AI生成水印，默认为 false"),
-      images: z
-        .array(z.string())
-        .optional()
-        .describe("智能参考图片 URL 列表，支持多张图片作为参考"),
-    },
-    outputSchema: {
-      success: z.boolean(),
-      imageUrl: z.string().optional(),
-      error: z.string().optional(),
-    },
+- 9:16 手机: 1440x2560`),
+    watermark: z
+      .boolean()
+      .optional()
+      .describe("是否添加AI生成水印，默认为 false"),
+    images: z
+      .array(z.string())
+      .optional()
+      .describe("智能参考图片 URL 列表，支持多张图片作为参考"),
+    mask: z
+      .string()
+      .optional()
+      .describe(
+        "蒙版图片 URL 或本地路径。黑色区域保持不变，白色区域进行重绘。通常与 images 配合使用进行局部编辑。",
+      ),
   },
-  async ({ prompt, size, watermark, images }) => {
+  async (args) => {
+    const { prompt, size, watermark, images, mask } = args;
+
     const result = await generateImage(prompt, {
       size,
       watermark,
       images,
+      mask,
     });
 
     const output = {
@@ -101,19 +109,31 @@ server.registerTool(
     };
 
     if (result.success) {
-      return {
-        content: [
-          {
-            type: "text",
-            text: `✅ 图片生成成功！
+      const responseContent: any[] = [
+        {
+          type: "text" as const,
+          text: `✅ 图片生成成功！
 
 🖼️  图片URL: ${result.tempUri}
 
 ⚠️  重要提示：
-此链接通常在 24 小时后失效，如需长期使用请及时保存到本地（可以通过curl）。
+此链接通过 Base64 传递，已在下方直接显示。
+此 URL 链接通常在 24 小时后失效。
 如果你需要永久链接，可以考虑使用云端版本：https://mcp.pixelark.art`,
-          },
-        ],
+        },
+      ];
+
+      // 如果有 base64 数据，添加 image 类型的 content
+      if (result.base64) {
+        responseContent.push({
+          type: "image",
+          data: result.base64,
+          mimeType: result.mimeType || "image/png",
+        });
+      }
+
+      return {
+        content: responseContent,
         structuredContent: output,
       };
     }
@@ -121,7 +141,7 @@ server.registerTool(
     return {
       content: [
         {
-          type: "text",
+          type: "text" as const,
           text: `❌ 图片生成失败: ${result.error}
 
 💡 遇到问题？试试商业版：

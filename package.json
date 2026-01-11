@@ -1,6 +1,6 @@
 {
-  "name": "seedream-image-mcp",
-  "version": "1.0.1",
+  "name": "@hongxianzhi/seedream-image-mcp",
+  "version": "1.0.3",
   "description": "基于火山引擎 SeeDream 模型的 MCP 图片生成工具，支持在 Cursor、Claude Desktop 等客户端中使用",
   "type": "module",
   "bin": {
@@ -13,8 +13,8 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "bun build src/index.ts --target node --packages external --minify --outfile dist/index.js",
-    "prepublishOnly": "bun run build"
+    "build": "tsc && chmod +x dist/index.js",
+    "prepublishOnly": "npm run build"
   },
   "keywords": [
     "mcp",
@@ -32,11 +32,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/wearzdk/seedream-image-mcp.git"
+    "url": "https://github.com/hongxianzhi/seedream-image-mcp.git"
   },
   "homepage": "https://mcp.pixelark.art",
   "bugs": {
-    "url": "https://github.com/wearzdk/seedream-image-mcp/issues"
+    "url": "https://github.com/hongxianzhi/seedream-image-mcp/issues"
   },
   "engines": {
     "node": ">=18.0.0"
@@ -50,6 +50,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.21.1",
+    "image-size": "^2.0.2",
     "zod": "^3.23.8"
   }
 }

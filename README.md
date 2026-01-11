@@ -22,8 +22,13 @@
 ### 2. 使用 npx 运行
 
 ```bash
-npx seedream-image-mcp --ark-key=YOUR_API_KEY
+npx @hongxianzhi/seedream-image-mcp --ark-key=YOUR_API_KEY [--ark-model=MODEL_NAME] [--ark-endpoint=REQUEST_ENDPOINT]
 ```
+
+**参数说明：**
+- `--ark-key` (必需) - 火山引擎 API Key
+- `--ark-model` (可选) - 模型名称，默认 `doubao-seedream-4-5-251128`
+- `--ark-endpoint` (可选) - 请求地址，默认 `https://ark.cn-beijing.volces.com/api/v3/images/generations`
 
 ### 3. 在 Cursor、Claude Desktop 中配置
 
@@ -34,7 +39,7 @@ npx seedream-image-mcp --ark-key=YOUR_API_KEY
   "mcpServers": {
     "seedream-image": {
       "command": "npx",
-      "args": ["seedream-image-mcp", "--ark-key=YOUR_API_KEY"]
+      "args": ["@hongxianzhi/seedream-image-mcp", "--ark-key=YOUR_API_KEY", "--ark-model=doubao-seedream-4-5-251128", "--ark-endpoint=https://ark.cn-beijing.volces.com/api/v3/images/generations"]
     }
   }
 }
@@ -79,13 +84,35 @@ AI 会自动调用工具完成生成。
 ### 安装依赖
 
 ```bash
-bun install
+npm install
 ```
 
-### 本地运行
+### 编译项目
 
 ```bash
-bun run src/index.ts --ark-key=YOUR_API_KEY
+npm run build
+```
+
+### 全局安装
+
+如需全局安装此包以便在命令行中使用，可执行以下步骤：
+
+```bash
+# 1. 正常编译
+npm run build
+
+# 2. 拷贝 dist/index.js 到全局 npm 目录
+cp dist/index.js "$(npm prefix -g)/lib/node_modules/seedream-image-mcp/dist/index.js"
+
+# 3. 创建符号链接到全局目录
+ln -sf "$(npm prefix -g)/lib/node_modules/seedream-image-mcp/dist/index.js" "$(npm prefix -g)/bin/seedream-image-mcp"
+```
+
+或者使用 npm link（推荐）：
+
+```bash
+npm run build
+npm link
 ```
 
 ## 📄 许可证
